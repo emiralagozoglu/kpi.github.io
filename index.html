@@ -1,70 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>Interactive KPI Movers (demo)</title>
+<meta charset="utf-8"/>
+<title>KPI Movers demo</title>
 
-  <!-- Tabulator CDN (HTTPS) -->
-  <link  href="https://unpkg.com/tabulator-tables@5.6.2/dist/css/tabulator.min.css" rel="stylesheet">
-  <script src="https://unpkg.com/tabulator-tables@5.6.2/dist/js/tabulator.min.js"></script>
+<link href="https://unpkg.com/tabulator-tables@5.6.2/dist/css/tabulator.min.css" rel="stylesheet">
+<script src="https://unpkg.com/tabulator-tables@5.6.2/dist/js/tabulator.min.js" defer></script>
 
-  <style>
-    body{font-family:sans-serif;margin:20px}
-    #grid{margin-top:10px}
-    #summary{font-weight:bold;margin-top:5px}
-  </style>
+<style>
+body{font-family:sans-serif;margin:20px}
+#summary{font-weight:bold;margin:10px 0}
+</style>
 </head>
 <body>
-  <h2>Interactive KPI Movers (demo)</h2>
-  <div id="summary"></div>
-  <div id="grid"></div>
+<h2>Interactive KPI Movers (demo)</h2>
+<div id="summary"></div>
+<div id="grid"></div>
 
-  <script>
-  //--- dummy data
-  const data=[
-    {campaign:"Campaign A", P1Cost:12270, P2Cost:10466, P1Click:1623, P2Click:2515},
-    {campaign:"Campaign B", P1Cost:5860 , P2Cost:23526, P1Click:1371, P2Click:2437},
-    {campaign:"Campaign C", P1Cost:10390, P2Cost:14426, P1Click: 630, P2Click:1805},
-  ];
-  // derive CPC + contribution once, so no external calc lib needed
-  data.forEach(r=>{
-    r.P1CPC = r.P1Cost / (r.P1Click||1);
-    r.P2CPC = r.P2Cost / (r.P2Click||1);
-    const totShare = r.P2Click / data.reduce((s,x)=>s+x.P2Click,0);
-    r.cpcContr = (r.P2CPC - r.P1CPC) * totShare;   // çok basit örnek
-  });
+<script defer>
+const data=[
+  {campaign:"Campaign A", P1Cost:12270, P2Cost:10466, P1Click:1623, P2Click:2515},
+  {campaign:"Campaign B", P1Cost:5860 , P2Cost:23526, P1Click:1371, P2Click:2437},
+];
 
-  // Tablo
-  const table = new Tabulator("#grid",{
-    data,
-    layout:"fitColumns",
-    columns:[
-      {title:"Campaign", field:"campaign", headerFilter:"input"},
-      {title:"P1 Cost", field:"P1Cost", bottomCalc:"sum", hozAlign:"right"},
-      {title:"P1 Click",field:"P1Click",bottomCalc:"sum"},
-      {title:"P1 CPC", field:"P1CPC", formatter:"money", bottomCalc:"avg"},
-      {title:"P2 Cost", field:"P2Cost", bottomCalc:"sum"},
-      {title:"P2 Click",field:"P2Click",bottomCalc:"sum"},
-      {title:"P2 CPC", field:"P2CPC", formatter:"money", bottomCalc:"avg"},
-      {title:"CPC Contr", field:"cpcContr", formatter:"money", bottomCalc:"sum"},
-    ],
-  });
+data.forEach(r=>{
+  r.P1CPC = r.P1Cost/(r.P1Click||1);
+  r.P2CPC = r.P2Cost/(r.P2Click||1);
+  const share = r.P2Click / data.reduce((s,x)=>s+x.P2Click,0);
+  r.cpcContr = (r.P2CPC-r.P1CPC)*share;
+});
 
-  // KPI üst-özet
-  function refresh(){
-    const rows = table.getData(true);   // filtered rows
-    const sum = rows.reduce((acc,r)=>{
-      acc.p1C += r.P1Cost; acc.p2C += r.P2Cost;
-      acc.p1K += r.P1Click;acc.p2K += r.P2Click;
-      return acc;
-    },{p1C:0,p2C:0,p1K:0,p2K:0});
-    const p1 = sum.p1C/(sum.p1K||1);
-    const p2 = sum.p2C/(sum.p2K||1);
-    document.getElementById("summary").textContent =
-      `P1 CPC: ${p1.toFixed(2)}   |   P2 CPC: ${p2.toFixed(2)}   |   Δ: ${(p2-p1).toFixed(2)}`;
-  }
-  refresh();
-  table.on("dataFiltered",refresh);
-  </script>
+const table=new Tabulator("#grid",{
+  data,
+  layout:"fitColumns",
+  columns:[
+    {title:"Campaign",field:"campaign",headerFilter:"input"},
+    {title:"P1 Cost",field:"P1Cost",hozAlign:"right",bottomCalc:"sum"},
+    {title:"P1 Click",field:"P1Click",bottomCalc:"sum"},
+    {title:"P1 CPC",field:"P1CPC",formatter:"money",bottomCalc:"avg"},
+    {title:"P2 Cost",field:"P2Cost",bottomCalc:"sum"},
+    {title:"P2 Click",field:"P2Click",bottomCalc:"sum"},
+    {title:"P2 CPC",field:"P2CPC",formatter:"money",bottomCalc:"avg"},
+    {title:"CPC Contr",field:"cpcContr",formatter:"money",bottomCalc:"sum"},
+  ],
+});
+
+function refresh(){
+  const rows=table.getData(true);
+  const sum=rows.reduce((a,r)=>({p1C:a.p1C+r.P1Cost,p2C:a.p2C+r.P2Cost,p1K:a.p1K+r.P1Click,p2K:a.p2K+r.P2Click}),{p1C:0,p2C:0,p1K:0,p2K:0});
+  const p1=sum.p1C/(sum.p1K||1), p2=sum.p2C/(sum.p2K||1);
+  document.getElementById("summary").textContent=`P1 CPC ${p1.toFixed(2)} | P2 CPC ${p2.toFixed(2)} | Δ ${(p2-p1).toFixed(2)}`;
+}
+refresh();
+table.on("dataFiltered",refresh);
+</script>
 </body>
 </html>
