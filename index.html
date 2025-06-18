@@ -1,0 +1,54 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Interactive KPI Movers Demo</title>
+  <link href="https://unpkg.com/tabulator-tables@5.6.2/dist/css/tabulator.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/tabulator-tables@5.6.2/dist/js/tabulator.min.js"></script>
+</head>
+<body>
+<h2 style="font-family:sans-serif">Interactive KPI Movers (demo)</h2>
+<div id="summary" style="margin:10px 0;font-family:sans-serif;font-weight:bold;"></div>
+<div id="grid"></div>
+
+<script>
+const data = [{"campaign":"Campaign 1","P1 Cost":12270,"P2 Cost":10466,"P1 Click":1623,"P2 Click":2515,"P1 CPC":7.5600739372,"P2 CPC":4.1614314115,"share_P1":0.2144556025,"share_P2":0.2042722547,"cpc_contribution":-0.7712352342},{"campaign":"Campaign 2","P1 Cost":5860,"P2 Cost":23526,"P1 Click":1371,"P2 Click":2437,"P1 CPC":4.2742523705,"P2 CPC":9.6536725482,"share_P1":0.1811575053,"share_P2":0.1979369721,"cpc_contribution":1.136505817},{"campaign":"Campaign 3","P1 Cost":10390,"P2 Cost":14426,"P1 Click":630,"P2 Click":1805,"P1 CPC":16.4920634921,"P2 CPC":7.9922437673,"share_P1":0.0832452431,"share_P2":0.1466049383,"cpc_contribution":-0.2011834309},{"campaign":"Campaign 4","P1 Cost":10191,"P2 Cost":15578,"P1 Click":1832,"P2 Click":1385,"P1 CPC":5.5627729258,"P2 CPC":11.2476534296,"share_P1":0.2420718816,"share_P2":0.1124918778,"cpc_contribution":-0.0813212535},{"campaign":"Campaign 5","P1 Cost":10734,"P2 Cost":24423,"P1 Click":1269,"P2 Click":2215,"P1 CPC":8.4586288416,"P2 CPC":11.0261851016,"share_P1":0.167679704,"share_P2":0.179905783,"cpc_contribution":0.5653340834},{"campaign":"Campaign 6","P1 Cost":11265,"P2 Cost":21636,"P1 Click":843,"P2 Click":1955,"P1 CPC":13.3629893238,"P2 CPC":11.0670076726,"share_P1":0.1113900634,"share_P2":0.1587881741,"cpc_contribution":0.2688057132}];
+
+function recalc(rows){
+  let p1C=0, p2C=0, p1K=0, p2K=0;
+  rows.forEach(r=>{
+      p1C += r["P1 Cost"]; p2C += r["P2 Cost"];
+      p1K += r["P1 Click"]; p2K += r["P2 Click"];
+  });
+  const p1Cpc = p1C / (p1K || 1);
+  const p2Cpc = p2C / (p2K || 1);
+  return {p1Cpc, p2Cpc, delta: p2Cpc - p1Cpc};
+}
+
+const table = new Tabulator("#grid",{
+  data:data,
+  layout:"fitColumns",
+  reactiveData:true,
+  columns:[
+    {title:"Campaign", field:"campaign", headerFilter:"input"},
+    {title:"P1 Cost", field:"P1 Cost", bottomCalc:"sum"},
+    {title:"P1 Click", field:"P1 Click", bottomCalc:"sum"},
+    {title:"P1 CPC", field:"P1 CPC", formatter:"money"},
+    {title:"P2 Cost", field:"P2 Cost", bottomCalc:"sum"},
+    {title:"P2 Click", field:"P2 Click", bottomCalc:"sum"},
+    {title:"P2 CPC", field:"P2 CPC", formatter:"money"},
+    {title:"CPC Contr", field:"cpc_contribution", formatter:"money", bottomCalc:"sum"},
+  ],
+});
+
+function refresh(){
+  const kpi = recalc(table.getData());
+  document.getElementById("summary").innerText =
+    `P1 CPC: ${kpi.p1Cpc.toFixed(2)}   |   P2 CPC: ${kpi.p2Cpc.toFixed(2)}   |   Δ: ${kpi.delta.toFixed(2)}`;
+}
+refresh();
+table.on("dataFiltered", refresh);
+</script>
+</body>
+</html>
